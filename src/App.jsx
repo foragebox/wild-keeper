@@ -67,7 +67,7 @@ function useSpeciesData() {
     let cancelled = false;
 fetch(SANITY_URL, {
   cache: "no-store",
-  headers: { Authorization: "skpUfV7mIONlJ3LTGVPxeVysgvPOTfxIpqWU3SnqrSYpZHGlXbfAAeuV4TTovbh5q9DmEDwlSqDlLnWqpKz3qhpTba2pM40MU0CuEwj9sBo9RZAQNz3YmUKGfgFp6UzA0ITz5ivq9HruKMrSlxzz2czSZxtpm9uPve5k8mXjZRgvF3GNxGFU" },
+  headers: { Authorization: "Bearer skpUfV7mIONlJ3LTGVPxeVysgvPOTfxIpqWU3SnqrSYpZHGlXbfAAeuV4TTovbh5q9DmEDwlSqDlLnWqpKz3qhpTba2pM40MU0CuEwj9sBo9RZAQNz3YmUKGfgFp6UzA0ITz5ivq9HruKMrSlxzz2czSZxtpm9uPve5k8mXjZRgvF3GNxGFU" },
 })      .then((r) => {
         if (!r.ok) throw new Error(`Sanity returned ${r.status}`);
         return r.json();
