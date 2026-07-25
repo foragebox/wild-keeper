@@ -275,7 +275,7 @@ export default function WildKeeper() {
               border: `1px solid ${showHazards ? C.caution : C.line}`,
             }}
           >
-            <AlertTriangle size={11} /> Include hazards/ID-only
+            <AlertTriangle size={11} /> Include toxic/hazardous
           </button>
           <span className="mx-1" style={{ color: C.line }}>|</span>
           <button
@@ -336,7 +336,7 @@ export default function WildKeeper() {
         {stats.hazards > 0 && !showHazards && (
           <p className="text-[11px] text-center" style={{ color: C.inkMuted }}>
             {stats.hazards} additional species are held back by default — toxic or dangerous look-alikes kept for
-            identification only. Toggle "Include hazards/ID-only" above to see them.
+            identification only. Toggle "Include toxic/hazardous" above to see them.
           </p>
         )}
       </div>
