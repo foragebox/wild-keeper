@@ -52,71 +52,49 @@ const REGIONS = [
 // ---- Sanity connection ----
 const SANITY_PROJECT_ID = "xffdw1uq";
 const SANITY_DATASET = "production";
-const GROQ = `*[_type == "species" && !(_id in path("drafts.**")) && $ts > 0 && !isRecipe]{
+const GROQ = `*[_type == "species" && !(_id in path("drafts.**")) && $ts > 0]{
   "id": _id,
-  name, latin, type, edible, months, part, habitat, idNotes, hazards, lookalikes, uses, isRecipe,
+  name, latin, type, edible, months, part, habitat, idNotes, hazards, lookalikes, uses,
   "photos": photos[].asset->url,
   "relatedIds": relatedSpecies[]._ref
 }`;
-const RECIPES_GROQ = `*[_type == "species" && !(_id in path("drafts.**")) && $ts > 0 && isRecipe]{
-  "id": _id,
-  name, latin, type, edible, habitat, idNotes, hazards, lookalikes, uses, isRecipe,
-  "photos": photos[].asset->url,
-  "relatedIds": relatedSpecies[]._ref
-}`;
-const TS = Date.now();
-const SANITY_URL = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2024-01-01/data/query/${SANITY_DATASET}?query=${encodeURIComponent(GROQ)}&$ts=${TS}`;
-const RECIPES_URL = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2024-01-01/data/query/${SANITY_DATASET}?query=${encodeURIComponent(RECIPES_GROQ)}&$ts=${TS}`;
-const SANITY_READ_TOKEN = "skpUfV7mIONlJ3LTGVPxeVysgvPOTfxIpqWU3SnqrSYpZHGlXbfAAeuV4TTovbh5q9DmEDwlSqDlLnWqpKz3qhpTba2pM40MU0CuEwj9sBo9RZAQNz3YmUKGfgFp6UzA0ITz5ivq9HruKMrSlxzz2czSZxtpm9uPve5k8mXjZRgvF3GNxGFU";
-
-function mapRow(d) {
-  return {
-    id: d.id,
-    name: d.name,
-    latin: d.latin || "",
-    type: d.type || "Plant",
-    edible: d.edible !== false,
-    months: d.months || [],
-    part: d.part || "",
-    habitat: d.habitat || "",
-    id_notes: d.idNotes || "",
-    hazards: d.hazards || "",
-    lookalikes: d.lookalikes || "",
-    uses: d.uses || "",
-    photos: d.photos || [],
-    related_ids: d.relatedIds || [],
-    isRecipe: !!d.isRecipe,
-  };
-}
+const SANITY_URL = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2024-01-01/data/query/${SANITY_DATASET}?query=${encodeURIComponent(GROQ)}&$ts=${Date.now()}`;
 
 function useSpeciesData() {
-  const [state, setState] = useState({ status: "loading", data: [], recipes: [], error: null });
+  const [state, setState] = useState({ status: "loading", data: [], error: null });
 
   useEffect(() => {
     let cancelled = false;
-    const fetchOpts = {
-      cache: "no-store",
-      headers: { Authorization: `Bearer ${SANITY_READ_TOKEN}` },
-    };
-    Promise.all([
-      fetch(SANITY_URL, fetchOpts).then((r) => {
+fetch(SANITY_URL, {
+  cache: "no-store",
+  headers: { Authorization: "Bearer skpUfV7mIONlJ3LTGVPxeVysgvPOTfxIpqWU3SnqrSYpZHGlXbfAAeuV4TTovbh5q9DmEDwlSqDlLnWqpKz3qhpTba2pM40MU0CuEwj9sBo9RZAQNz3YmUKGfgFp6UzA0ITz5ivq9HruKMrSlxzz2czSZxtpm9uPve5k8mXjZRgvF3GNxGFU" },
+})      .then((r) => {
         if (!r.ok) throw new Error(`Sanity returned ${r.status}`);
         return r.json();
-      }),
-      fetch(RECIPES_URL, fetchOpts).then((r) => {
-        if (!r.ok) throw new Error(`Sanity returned ${r.status}`);
-        return r.json();
-      }),
-    ])
-      .then(([speciesRes, recipesRes]) => {
+      })
+      .then((res) => {
         if (cancelled) return;
-        const rows = (speciesRes.result || []).map(mapRow);
-        const recipeRows = (recipesRes.result || []).map(mapRow);
-        setState({ status: "ready", data: rows, recipes: recipeRows, error: null });
+        const rows = (res.result || []).map((d) => ({
+          id: d.id,
+          name: d.name,
+          latin: d.latin || "",
+          type: d.type || "Plant",
+          edible: d.edible !== false,
+          months: d.months || [],
+          part: d.part || "",
+          habitat: d.habitat || "",
+          id_notes: d.idNotes || "",
+          hazards: d.hazards || "",
+          lookalikes: d.lookalikes || "",
+          uses: d.uses || "",
+          photos: d.photos || [],
+          related_ids: d.relatedIds || [],
+        }));
+        setState({ status: "ready", data: rows, error: null });
       })
       .catch((err) => {
         if (cancelled) return;
-        setState({ status: "error", data: [], recipes: [], error: err.message });
+        setState({ status: "error", data: [], error: err.message });
       });
     return () => {
       cancelled = true;
@@ -128,7 +106,7 @@ function useSpeciesData() {
 
 export default function WildKeeper() {
   useFonts();
-  const { status, data: SPECIES_DATA, recipes: RECIPES_DATA, error } = useSpeciesData();
+  const { status, data: SPECIES_DATA, error } = useSpeciesData();
   const currentMonth = new Date().getMonth() + 1;
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [region, setRegion] = useState(REGIONS[0].id);
@@ -138,10 +116,7 @@ export default function WildKeeper() {
   const [allMonths, setAllMonths] = useState(false);
   const [openId, setOpenId] = useState(null);
 
-  const BY_ID = useMemo(
-    () => Object.fromEntries([...SPECIES_DATA, ...RECIPES_DATA].map((s) => [s.id, s])),
-    [SPECIES_DATA, RECIPES_DATA]
-  );
+  const BY_ID = useMemo(() => Object.fromEntries(SPECIES_DATA.map((s) => [s.id, s])), [SPECIES_DATA]);
   const regionInfo = REGIONS.find((r) => r.id === region);
 
   const filtered = useMemo(() => {
@@ -536,55 +511,30 @@ function SpeciesDetail({ species, byId, onClose, onOpenRelated }) {
             </div>
           )}
 
-          {species.related_ids && species.related_ids.length > 0 && (() => {
-            const related = species.related_ids.map((rid) => byId[rid]).filter(Boolean);
-            const lookalikes = related.filter((r) => !r.isRecipe);
-            const recipeLinks = related.filter((r) => r.isRecipe);
-            return (
-              <>
-                {lookalikes.length > 0 && (
-                  <div className="mt-4 pt-3" style={{ borderTop: `1px solid ${C.line}` }}>
-                    <span className="text-[10px] uppercase tracking-wide" style={{ color: C.inkMuted }}>
-                      Compare with
-                    </span>
-                    <div className="flex gap-2 mt-2 flex-wrap">
-                      {lookalikes.map((rel) => (
-                        <button
-                          key={rel.id}
-                          onClick={() => onOpenRelated(rel.id)}
-                          className="text-xs px-2.5 py-1.5 flex items-center gap-1"
-                          style={{ background: C.panelRaised, border: `1px solid ${C.line}`, color: C.ink }}
-                        >
-                          {!rel.edible && <AlertTriangle size={11} style={{ color: C.caution }} />}
-                          {rel.name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {recipeLinks.length > 0 && (
-                  <div className="mt-4 pt-3" style={{ borderTop: `1px solid ${C.line}` }}>
-                    <span className="text-[10px] uppercase tracking-wide" style={{ color: C.inkMuted }}>
-                      Recipe using this
-                    </span>
-                    <div className="flex gap-2 mt-2 flex-wrap">
-                      {recipeLinks.map((rel) => (
-                        <button
-                          key={rel.id}
-                          onClick={() => onOpenRelated(rel.id)}
-                          className="text-xs px-2.5 py-1.5 flex items-center gap-1"
-                          style={{ background: C.panelRaised, border: `1px solid ${C.gold}`, color: C.gold }}
-                        >
-                          <ChefHat size={11} />
-                          {rel.name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </>
-            );
-          })()}
+          {species.related_ids && species.related_ids.length > 0 && (
+            <div className="mt-4 pt-3" style={{ borderTop: `1px solid ${C.line}` }}>
+              <span className="text-[10px] uppercase tracking-wide" style={{ color: C.inkMuted }}>
+                Compare with
+              </span>
+              <div className="flex gap-2 mt-2 flex-wrap">
+                {species.related_ids.map((rid) => {
+                  const rel = byId[rid];
+                  if (!rel) return null;
+                  return (
+                    <button
+                      key={rid}
+                      onClick={() => onOpenRelated(rid)}
+                      className="text-xs px-2.5 py-1.5 flex items-center gap-1"
+                      style={{ background: C.panelRaised, border: `1px solid ${C.line}`, color: C.ink }}
+                    >
+                      {!rel.edible && <AlertTriangle size={11} style={{ color: C.caution }} />}
+                      {rel.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
