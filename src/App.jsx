@@ -52,12 +52,13 @@ const REGIONS = [
 // ---- Sanity connection ----
 const SANITY_PROJECT_ID = "xffdw1uq";
 const SANITY_DATASET = "production";
-const GROQ = `*[_type == "species" && !(_id in path("drafts.**"))]{  "id": _id,
+const GROQ = `*[_type == "species" && !(_id in path("drafts.**")) && $ts > 0]{
+  "id": _id,
   name, latin, type, edible, months, part, habitat, idNotes, hazards, lookalikes, uses,
   "photos": photos[].asset->url,
   "relatedIds": relatedSpecies[]._ref
 }`;
-const SANITY_URL = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2024-01-01/data/query/${SANITY_DATASET}?query=${encodeURIComponent(GROQ)}`;
+const SANITY_URL = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2024-01-01/data/query/${SANITY_DATASET}?query=${encodeURIComponent(GROQ)}&$ts=${Date.now()}`;
 
 function useSpeciesData() {
   const [state, setState] = useState({ status: "loading", data: [], error: null });
