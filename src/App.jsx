@@ -52,13 +52,13 @@ const REGIONS = [
 // ---- Sanity connection ----
 const SANITY_PROJECT_ID = "xffdw1uq";
 const SANITY_DATASET = "production";
-const GROQ = `*[_type == "species" && !(_id in path("drafts.**")) && $ts > 0 && !isRecipe]{
+const GROQ = `*[_type == "species" && !(_id in path("drafts.**")) && $ts > 0 && isRecipe != true]{
   "id": _id,
   name, latin, type, edible, months, part, habitat, idNotes, hazards, lookalikes, uses, isRecipe,
   "photos": photos[].asset->url,
   "relatedIds": relatedSpecies[]._ref
 }`;
-const RECIPES_GROQ = `*[_type == "species" && !(_id in path("drafts.**")) && $ts > 0 && isRecipe]{
+const RECIPES_GROQ = `*[_type == "species" && !(_id in path("drafts.**")) && $ts > 0 && isRecipe == true]{
   "id": _id,
   name, latin, type, edible, habitat, idNotes, hazards, lookalikes, uses, isRecipe,
   "photos": photos[].asset->url,
