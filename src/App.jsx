@@ -57,14 +57,14 @@ const GROQ = `*[_type == "species" && !(_id in path("drafts.**"))]{  "id": _id,
   "photos": photos[].asset->url,
   "relatedIds": relatedSpecies[]._ref
 }`;
-const SANITY_URL = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2024-01-01/data/query/${SANITY_DATASET}?query=${encodeURIComponent(GROQ)}`;
+const SANITY_URL = `https://${SANITY_PROJECT_ID}.api.sanity.io/v2024-01-01/data/query/${SANITY_DATASET}?query=${encodeURIComponent(GROQ)}&_ts=${Date.now()}`;
 
 function useSpeciesData() {
   const [state, setState] = useState({ status: "loading", data: [], error: null });
 
   useEffect(() => {
     let cancelled = false;
-    fetch(SANITY_URL)
+fetch(SANITY_URL, { cache: "no-store" })
       .then((r) => {
         if (!r.ok) throw new Error(`Sanity returned ${r.status}`);
         return r.json();
